@@ -4,10 +4,10 @@ window.util = {
 		return promise;
 	},
 	getX: function (data) {
-		return data.group.match(/[0-9]+$/);
+		return parseInt(data.group.match(/[0-9]+$/), 10);
 	},
 	getY: function (data) {
-		return data.group.match(/^[0-9]+/);
+		return parseInt(data.group.match(/^[0-9]+/), 10);
 	},
 	getR: function (data) {
 		return data.reach>0 ? (100/data.reach) * data.metric : 0
@@ -53,9 +53,9 @@ window.BubbleChart = function (data) {
 		maxR = 200,
 		data = data.time_of_week,
 		scale = { 
-			x: d3.scale.linear().range([0, 240, 10]).domain([d3.min(data, util.getX), d3.max(data, util.getX)]),
-			y: d3.scale.linear().range([70, 0, 10]).domain([d3.min(data, util.getY), d3.max(data, util.getY)]),
-			r: d3.scale.linear().range([0, 100, 10]).domain([d3.min(data, util.getR), d3.max(data, util.getR)])
+			x: d3.scale.linear().range([0, 800, 1]).domain([d3.min(data, util.getX), d3.max(data, util.getX)]),
+			y: d3.scale.linear().range([600, 0, 1]).domain([d3.min(data, util.getY), d3.max(data, util.getY)]),
+			r: d3.scale.linear().range([0, 100, 1]).domain([d3.min(data, util.getR), d3.max(data, util.getR)])
 		};
 
 		this.getScale = function (type) {
@@ -74,10 +74,10 @@ BubbleChart.prototype = {
 			getScale = $.proxy(this.getScale, this);
 			xAxis = d3.svg.axis().scale(getScale('x')),
 			yAxis = d3.svg.axis().scale(getScale('y')).orient('left');
-			container.append('svg:g').call(xAxis).attr('transform', 'translate(40,300)');
+			container.append('svg:g').call(xAxis).attr('transform', 'translate(40,640)');
 			container.append('svg:g').call(yAxis).attr('transform', 'translate(40,0)');
 
-		var circles = container.selectAll('circle');
+		/*var circles = container.selectAll('circle');
 		circles.data(this.data).enter().insert('circle').
 		attr('cx', 
 			function (d) { 
@@ -97,6 +97,6 @@ BubbleChart.prototype = {
 				}
 				//return isNaN(r)? 0 : r;
 			})
-		.attr('fill', 'blue');
+		.attr('fill', 'blue');*/
 	}
 }

@@ -9,9 +9,28 @@
 			svg {
 				margin-top: 20px;
 			}
+
+			.axis path,
+			.axis line {
+    			fill: none;
+    			shape-rendering: crispEdges;
+			}
+
+			.axis text {
+    			font-family: sans-serif;
+    			font-size: 11px;
+			}
+
+			.grid .tick {
+    			stroke: lightgrey;
+    			opacity: 0.7;
+			}
+			.grid path {
+      			stroke-width: 0;
+			}
 		</style>
 	</head>
 	<body>
-		<svg id='bubble' width='1000' height='800'></svg>
+		<svg id='bubble' width='1200' height='800' class='axis'></svg>
 	</body>
 </html>

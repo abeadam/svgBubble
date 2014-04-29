@@ -53,12 +53,11 @@ window.util = {
 
 })($);
 
-
+var width = 900,
+	height = 500,
+	maxR = 40;
 window.BubbleChart = function (data) {
-	var width = 800,
-		height = 450,
-		maxR = 40,
-		data = data.time_of_week,
+	var data = data.time_of_week,
 		scale = { 
 			x: d3.scale.linear().range([0, width]).domain([ 0, 23]),
 			y: d3.time.scale().range([height, 0]).domain([moment('2000-01-01 00:00:00').subtract('week',1).toDate(), moment('2000-01-01 00:00:00').toDate()]).clamp(true).nice() ,
@@ -75,6 +74,20 @@ window.BubbleChart = function (data) {
 
 };
 
+function make_x_axis(x) {        
+    return d3.svg.axis()
+        .scale(x)
+         .orient("bottom")
+         .ticks(24)
+}
+
+function make_y_axis(y) {        
+    return d3.svg.axis()
+        .scale(y)
+        .orient("left")
+        .ticks(7)
+}
+
 BubbleChart.prototype = {
 	render: function () {
 		var container = this.container,
@@ -84,13 +97,14 @@ BubbleChart.prototype = {
 				return (data > 12 ? (data -12)+'pm': data+'am');
 			}).
 			ticks(24).
-			innerTickSize(10),
+			outerTickSize(0),
 			yAxis = d3.svg.axis().scale(getScale('y')).orient('left').
 			ticks(7).
 			tickFormat(function(data){
 				return moment.weekdays(moment(data).weekday());
-			}).tickSubdivide(0);
-			container.append('svg:g').call(xAxis).attr('transform', 'translate(100, 500)');
+			}).tickSubdivide(0).
+			outerTickSize(0);
+			container.append('svg:g').call(xAxis).attr('transform', 'translate(100, ' + height + ')');
 			container.append('svg:g').call(yAxis).attr('transform', 'translate(100,0)');
 
 		var circles = container.selectAll('circle');
@@ -117,5 +131,21 @@ BubbleChart.prototype = {
 				//return isNaN(r)? 0 : r;
 			})
 		.attr('fill', 'blue');
+
+		container.append("g")         
+        .attr("class", "grid")
+        .attr("transform", "translate(100," + height + ")")
+        .call(make_x_axis(getScale('x'))
+            .tickSize(-height, 0, 0)
+            .tickFormat("")
+        )
+
+    	container.append("g")         
+        .attr("class", "grid")
+        .attr('transform', 'translate(100,0)')
+        .call(make_y_axis(getScale('y'))
+            .tickSize(-width, 0, 0)
+            .tickFormat("")
+        )
 	}
 }

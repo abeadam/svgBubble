@@ -91,6 +91,7 @@ function make_y_axis(y) {
 BubbleChart.prototype = {
 	render: function () {
 		var container = this.container,
+			data = this.data,
 			getScale = $.proxy(this.getScale, this),
 			xAxis = d3.svg.axis().scale(getScale('x')).
 			tickFormat(function(data){
@@ -135,21 +136,26 @@ BubbleChart.prototype = {
 
         var tooltip = d3.select('body').append('div').attr('class', 'tooltip');
 
-
+        //---- add bubbles -----
 		var circles = container.selectAll('circle');
-		circles.data(this.data).enter().insert('circle').
-		attr('cx', 
+		circles
+		.data(data, function(d) {
+			return d.group;
+		})
+		.enter()
+		.insert('circle')
+		.attr('cx', 
 			function (d) { 
 				if(getScale('x')(util.getX(d)) < 0) {
 					console.log('problem');
 				}
 				return getScale('x')(util.getX(d));
-			}).
-		attr('cy', 
+			})
+		.attr('cy', 
 			function (d) {
 				return getScale('y')(util.getY(d)); 
-			}).
-		attr('r', 
+			})
+		.attr('r', 
 			function (d) {
 				var r = getScale('r')(util.getR(d));
 				if (isNaN(r)) {
@@ -157,23 +163,165 @@ BubbleChart.prototype = {
 				} else {
 					return r
 				}
-				//return isNaN(r)? 0 : r;
 			})
 		.attr('fill', 'blue');
-		d3.selectAll('circle').on('mouseover', function(data) {
-			if(this.enter = true) {
-				tooltip.text(util.getR(data)+'%');
-				tooltip.style('top', (event.pageY+5)+'px');
-				tooltip.style('left', (event.pageX-20)+'px');
-				tooltip.style('visibility', 'visible');
-				d3.select(this).attr('opacity', 0.6);
-			}
+
+		//------ add hover for tooltips ---------------
+		container.selectAll('circle').on('mouseover', function(data) {
+			tooltip.text(util.getR(data)+'%');
+			tooltip.style('top', (event.pageY+5)+'px');
+			tooltip.style('left', (event.pageX-20)+'px');
+			tooltip.style('visibility', 'visible');
+			d3.select(this).attr('opacity', 0.6);
 		});
-		d3.selectAll('circle').on('mouseout', function(data) {
+		container.selectAll('circle').on('mouseout', function(data) {
 			tooltip.style('visibility', 'hidden');
 			d3.select(this).attr('opacity', 1);
-			this.enter = false;
-			console.log(event.srcElement == this);
+		});
+
+		//-------add click handler to split the bubble ---------
+		container.selectAll('circle').on('click', function onClick(d, index) {
+			var currentData,
+				day,
+				hour,
+				newBubble1,
+				newBubble2,
+				circles = container.selectAll('circle');
+	
+			if (!d.other) {
+				currentData = data.splice(index, 1)[0];
+				day =  parseInt(currentData.group.match(/^[0-9]+/), 10);
+				hour = parseInt(currentData.group.match(/[0-9]+$/), 10);
+				newBubble1 = $.extend({}, currentData);
+				newBubble2 = $.extend({}, currentData);
+				newBubble1.metric = newBubble1.metric / 2;
+				newBubble1.group = day+'-'+(hour+1);
+				newBubble2.metric = newBubble2.metric / 2;
+				newBubble2.group = day+'-'+(hour-1);
+	
+				newBubble1.other = newBubble2;
+				newBubble2.other = newBubble1;
+	
+				data.push(newBubble1);
+				data.push(newBubble2);
+	
+				circles
+				.data(data, function(d) {
+					return d.group;
+				})
+				.enter()
+				.insert('circle')
+				.attr('cx', 
+					function (d) { 
+						if(getScale('x')(util.getX(d)) < 0) {
+							console.log('problem');
+						}
+						return getScale('x')(util.getX(currentData));
+					})
+				.attr('cy', 
+					function (d) {
+						return getScale('y')(util.getY(d)); 
+					})
+				.attr('r', 
+					function (d) {
+						var r = getScale('r')(util.getR(d));
+						if (isNaN(r)) {
+							return 0;
+						} else {
+							return r
+						} 
+					})
+				.attr('fill', 'blue')
+				.transition()
+				.duration(750)
+				.ease('elastic')
+				.attr('cx', 
+					function (d) { 
+						if(getScale('x')(util.getX(d)) < 0) {
+							console.log('problem');
+						}
+						return getScale('x')(util.getX(d));
+					});
+	
+				
+	
+				circles
+				.data(data, function(d) {
+					return d.group;
+				})
+				.exit()
+				.transition()
+				.delay(500)
+				.remove(
+					function(d) { 
+						console.log(d);
+				});
+	
+				container.selectAll('circle').on('mouseover', function(data) {
+					tooltip.text(util.getR(data)+'%');
+					tooltip.style('top', (event.pageY+5)+'px');
+					tooltip.style('left', (event.pageX-20)+'px');
+					tooltip.style('visibility', 'visible');
+					d3.select(this).attr('opacity', 0.6);
+				});
+	
+				container.selectAll('circle').on('mouseout', function(data) {
+					tooltip.style('visibility', 'hidden');
+					d3.select(this).attr('opacity', 1);
+				});
+			} else {
+				var other = d.other,
+					otherIndex = data.indexOf(other),
+					origial = $.extend({}, d);
+
+				original.other = false;
+
+				day =  parseInt(d.group.match(/^[0-9]+/), 10);
+				hour = ( parseInt(d.match(/[0-9]+$/), 10) + parseInt(d.group.match(/^[0-9]+/), 10) )/2;
+				original.group = day+'-'+hour;
+				original.metric = d.metric * 2;
+
+				data.splice(index, 1);
+				data.splice(otherIndex, 1);
+
+				circles
+				.data(data, function(d) {
+					return d.group;
+				})
+				.exit()
+				.attr('cx', 
+					function (d) { 
+						if(getScale('x')(util.getX(d)) < 0) {
+							console.log('problem');
+						}
+						return getScale('x')(util.getX(d));
+					})
+				.attr('cy', 
+					function (d) {
+						return getScale('y')(util.getY(d)); 
+					})
+				.attr('r', 
+					function (d) {
+						var r = getScale('r')(util.getR(d));
+						if (isNaN(r)) {
+							return 0;
+						} else {
+							return r
+						} 
+					})
+				.attr('fill', 'blue')
+				.transition()
+				.duration(750)
+				.ease('elastic')
+				.attr('cx', 
+					function (d) { 
+						if(getScale('x')(util.getX(d)) < 0) {
+							console.log('problem');
+						}
+						return getScale('x')(util.getX(original));
+					});
+			}
+		
 		});
 
 	}
